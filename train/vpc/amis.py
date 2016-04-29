@@ -58,7 +58,7 @@ EU_WEST_1 = {
     'RHEL-7.0': 'ami-8cff51fb',
     'RHEL-7.1': 'ami-25158352',
     'SUSE-SLES-12': 'ami-e801af9f',
-    'Ubuntu-14.04': 'ami-f5810f82',
+    'Ubuntu-14.04': 'ami-f95ef58a',
     'Ubuntu-15.04': 'ami-3a229449',
 }
 

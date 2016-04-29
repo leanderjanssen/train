@@ -15,8 +15,8 @@ import vpc
 def _checks():
     """Requirements"""
 
-    if not os.environ.get("MANDRILL_KEY"):
-        print "\nERROR: Required environment variable 'MANDRILL_KEY' not set!\n"
+    if not os.environ.get("MAILGUN_KEY"):
+        print "\nERROR: Required environment variable 'MAILGUN_KEY' not set!\n"
         sys.exit()
     if os.environ.get('USER_FILE'):
         print 'ERROR: USER_FILE environment variable must not be set.'

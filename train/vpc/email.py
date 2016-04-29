@@ -7,19 +7,19 @@ import base64
 import sys
 from util import check_email_template
 
-import mandrill
-
+import requests
 
 from config import *
 
 def email_credentials(conn):
     """Email all user information and credentials listed in USER_FILE"""
 
-    if not os.environ.get("MANDRILL_KEY"):
-        print "\nERROR: Required environment variable 'MANDRILL_KEY' not set!\n"
+    if not os.environ.get("MAILGUN_KEY") or os.environ.get("MAILGUN_DOMAIN"):
+        print "\nERROR: Required environment variable 'MAILGUN_KEY' or 'MAILGUN_DOMAIN' not set!\n"
         sys.exit()
     else:
-        mandrill_client = mandrill.Mandrill(os.environ.get('MANDRILL_KEY'))
+        MAILGUN_KEY = check_env('MAILGUN_KEY')
+        MAILGUN_DOMAIN = check_env('MAILGUN_DOMAIN')
 
     check_email_template()
 
@@ -32,49 +32,33 @@ def email_credentials(conn):
             username = line.split(',')[0].strip()
             email = line.split(',')[1].strip()
 
-            # keyfile
-            with open ('/host/{0}/users/{1}/{1}-{0}.pem'.format(VPC, username), "r") as f:
-                keyfile = base64.b64encode(f.read())
-            # ppkfile
-            with open ('/host/{0}/users/{1}/{1}-{0}.ppk'.format(VPC, username), "r") as f:
-                ppkfile = base64.b64encode(f.read())
-
             # instances
             files = [f for f in os.listdir('/host/{0}/users/{1}/'.format(VPC, username)) if f.endswith('.txt')]
+            target = open('/host/{0}/users/{1}/instances.txt'.format(VPC, username), 'w')
+            target.truncate()
+
             for textfile in files:
                 with open('/host/{0}/users/{1}/{2}'.format(VPC, username, textfile)) as f:
                     instances += f.read()
                     instances += '\n'
+                    target.write(instances)
+
+            target.close()
 
             try:
-                message = {
-                    'from_email': mail.from_email,
-                    'from_name': mail.from_name,
-                    'to': [{'email': email, 'name': username, 'type': 'to'}],
-                    'subject': mail.subject,
-                    'text': mail.text,
-                    'attachments': [
-                        {
-                            "type": "text/plain",
-                            "name": "{0}.pem".format(username),
-                            "content": keyfile
-                        },
-                        {
-                            "type": "text/plain",
-                            "name": "{0}.ppk".format(username),
-                            "content": ppkfile
-                        },
-                        {
-                            "type": "text/plain",
-                            "name": "instances.txt",
-                            "content": base64.b64encode(instances)
-                        }
-                    ],
-                }
+                result = requests.post(
+                    "https://api.mailgun.net/v3/{0}/messages".format(MAILGUN_DOMAIN),
+                    auth = ("api", MAILGUN_KEY),
+                    files = [ ("attachment", open ('/host/{0}/users/{1}/{1}-{0}.pem'.format(VPC, username))),
+                              ("attachment", open ('/host/{0}/users/{1}/{1}-{0}.ppk'.format(VPC, username))),
+                              ("attachment", open ('/host/{0}/users/{1}/instances.txt'.format(VPC, username))) ],
+                    data = { 'from': "{0} <{1}>".format(mail.from_name, mail.from_email),
+                             'to': email,
+                             'subject': mail.subject,
+                             'text': mail.text})
 
-                result = mandrill_client.messages.send(message=message)
                 print "Welcome email sent to: '{0}' <{1}> ...".format(username, email)
 
-            except mandrill.Error, e:
-                print 'A mandrill error occurred: %s - %s' % (e.__class__, e)
+            except requests.exceptions.ConnectionError as e:
+                print 'An error occurred'
                 raise
