@@ -1,9 +1,9 @@
 # Train
 
-Train is a set Amazon Web Services CLI tools (packaged in a Docker container) used to manage AWS users, VPC's, user keys/security, AMI's, custom labs (one or more AWS instances grouped by tag), and sets of labs to be used for demos, testing, and training.
+Train is a set of Amazon Web Services CLI tools (packaged in a Docker container) used to manage AWS users, VPC's, user keys/security, AMI's, custom labs (one or more AWS instances grouped by tag), and sets of labs to be used for demos, testing, and training.
 
 - **train**: Primary tool - Manages all VPC Objects and instances
-- **train-users**: Mananges additional users allowed to use **train**
+- **train-users**: Manages additional users allowed to use **train**
 - **train-images**: Manages associated lab AMI's
 
 ---
@@ -34,7 +34,7 @@ The tools provide a simple way to quickly create, manage, and destroy:
 ### Registration for training/testing
 
 - Bulk registration (Launch labs for users listed in a text file)
-- Registration mode: A 'Kiosk' style registration mode that provides a welcome message and prompts for email address used to launch labs. 
+- Registration mode: A 'Kiosk' style registration mode that provides a welcome message and prompts for email address used to launch labs.
 
 ## Requirements
 
@@ -78,10 +78,11 @@ Available AWS Regions
 
 ---
 
-When using the bulk registration feature or registration mode a [Mandrill API Key](https://www.mandrill.com/) is also required
+When using the bulk registration feature or registration mode a [Mailgun API Key](https://mailgun.com/) is also required
 
 ```
-MANDRILL_KEY=<mandrill-key>
+MAILGUN_KEY=<mailgun-key>
+MAILGUN_DOMAIN=<mailgun-domain>
 ```
 
 Note: TRAINER (username) is only used for tagging VCP objects only. It is not tied to any permissions.
@@ -108,12 +109,12 @@ A local host volume needs to be mounted inside the container to `/host` when run
 
 ## Walk-through - Personal Use
 
-The following section is a walk-through of usage for personal use (Useful for demos and individuals involved in QA/documentation/support teams) 
+The following section is a walk-through of usage for personal use (Useful for demos and individuals involved in QA/documentation/support teams)
 
 Pull the Docker image:
 
 ```
-vagrant@dockertest:~$ docker pull kizbitz/train
+vagrant@dockertest:~$ docker pull leanderjanssen/train
 Using default tag: latest
 latest: Pulling from kizbitz/train
 843e2bded498: Pull complete
@@ -137,7 +138,7 @@ vagrant@dockertest:~/sandbox$ vim train.env
 vagrant@dockertest:~/sandbox$ cat train.env
 TRAINER=jbaker
 VPC=demo
-AWS_REGION=us-east-1
+AWS_REGION=eu-west-1
 AWS_ACCESS_KEY_ID=<your-aws-access-key>
 AWS_SECRET_ACCESS_KEY=<your-aws-secret-access-key>
 ```
@@ -150,8 +151,8 @@ total 12
 drwxrwxr-x  2 vagrant vagrant 4096 Jan 12 10:46 .
 drwxr-xr-x 10 vagrant vagrant 4096 Jan 12 10:46 ..
 -rw-------  1 vagrant vagrant  219 Jan 12 10:46 train.env
-vagrant@dockertest:~/sandbox$ docker run -ti --rm --env-file='train.env' -v $(pwd):/host kizbitz/train
-jbaker-demo:us-east-1:~$
+vagrant@dockertest:~/sandbox$ docker run -ti --rm --env-file='train.env' -v $(pwd):/host leanderjanssen/train
+jbaker-demo:eu-west-1:~$
 ```
 
 After entering the container note that the prompt is displaying the: **TRAINER-VPC:AWS_REGION** environment variables.
@@ -595,7 +596,7 @@ jbaker-demo:us-east-1:~$ tree /host/share
 jbaker-demo:us-east-1:~$
 ```
 
-List running labs and instances: 
+List running labs and instances:
 
 ```
 jbaker-demo:us-east-1:~$ train -l
@@ -626,7 +627,7 @@ Email all users their lab instance information and keys:
 
 Note:
 
-- Requires a MANDRILL_KEY - See requirements section above.
+- Requires a MAILGUN_KEY and MAILGUN_DOMAIN - See requirements section above.
 - Recommended that you use a customized email template. See: https://github.com/kizbitz/train/blob/master/train/vpc/config.py#L58
   - By default **train** will look for an email template in: `/host/<VPC>/email.py`
   - If `/host/<VPC>/email` does not exist the template that will be used is located here: https://github.com/kizbitz/train/blob/master/train/templates/email.py
@@ -655,7 +656,7 @@ This mode:
 - Creates a username from the email and creates the key pairs
 - Launches the lab and then emails the user the connection info and keys
 
-MANDRILL_KEY required and using a custom email template is recommend.
+MAILGUN_KEY and MAILGUN_DOMAIN required and using a custom email template is recommend.
 
 Notes:
 
@@ -745,7 +746,7 @@ The train-images CLI tool is used to manage AMI's for labs. Depending on how lon
 
 Notes:
 
-- Only one AMI is created per instance definition in instances.cfg. This will be the `<name>-0` instance when **NAME** is used in the definition or the zero index of the **NAMES** list. See: https://github.com/kizbitz/train/blob/master/train/labs/template/instances.cfg#L16-L22 
+- Only one AMI is created per instance definition in instances.cfg. This will be the `<name>-0` instance when **NAME** is used in the definition or the zero index of the **NAMES** list. See: https://github.com/kizbitz/train/blob/master/train/labs/template/instances.cfg#L16-L22
 - When launching a lab **train** checks for existing AMI images for the lab and will use those if present. If not, the standard cloud-init script is used.
 
 ### Example usage
@@ -884,7 +885,7 @@ jbaker-demo:us-east-1:~$
 
 If you switch VPCs often you can create a helper function and pass in your VPC for launching your container.
 
-Example function for Bash (~/.bashrc on your Docker host): 
+Example function for Bash (~/.bashrc on your Docker host):
 
 ```
 function train {
@@ -899,3 +900,7 @@ function train {
 ### Finally
 
 Thoughts, comments, suggestions, bug reports, and pull requests welcome....
+
+## Acknowledgements
+
+* [Train](https://github.com/kizbitz/train)
