@@ -14,7 +14,7 @@ from config import *
 def email_credentials(conn):
     """Email all user information and credentials listed in USER_FILE"""
 
-    if not os.environ.get("MAILGUN_KEY") or os.environ.get("MAILGUN_DOMAIN"):
+    if not os.environ.get("MAILGUN_KEY") or not os.environ.get("MAILGUN_DOMAIN"):
         print "\nERROR: Required environment variable 'MAILGUN_KEY' or 'MAILGUN_DOMAIN' not set!\n"
         sys.exit()
     else:
@@ -41,8 +41,8 @@ def email_credentials(conn):
                 with open('/host/{0}/users/{1}/{2}'.format(VPC, username, textfile)) as f:
                     instances += f.read()
                     instances += '\n'
-                    target.write(instances)
 
+            target.write(instances)
             target.close()
 
             try:
